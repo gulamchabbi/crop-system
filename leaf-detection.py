@@ -1,15 +1,14 @@
+# Crop Disease Detection using AI
 # Author: Gulam N Chabbi
-# Project: Crop Disease Detection using AI
 
 import streamlit as st
 from transformers import pipeline
 from PIL import Image
 import pandas as pd
-import webbrowser
 
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(
-    page_title="Crop Disease Detection | AgriScan",
+    page_title="Crop Disease Detection",
     page_icon="🌿",
     layout="wide"
 )
@@ -17,26 +16,20 @@ st.set_page_config(
 # ---------------- DISEASE DATABASE ----------------
 CROP_DB = {
     "Healthy": {
-        "severity": "low",
-        "description": "Leaf appears healthy with no visible disease.",
-        "treatment": "No treatment required. Maintain current farming practices.",
-        "action": "Continue regular irrigation and monitoring."
+        "description": "The leaf is healthy with no visible disease.",
+        "treatment": "No treatment required. Maintain regular care."
     },
     "Angular Leaf Spot": {
-        "severity": "high",
-        "description": "Fungal disease causing angular brown lesions.",
-        "treatment": "Apply copper-based fungicides and remove infected leaves.",
-        "action": "Immediate treatment recommended."
+        "description": "Fungal disease causing brown angular lesions.",
+        "treatment": "Apply copper-based fungicide and remove infected leaves."
     },
     "Bean Rust": {
-        "severity": "high",
-        "description": "Rust-colored pustules on leaf surface caused by fungus.",
-        "treatment": "Use sulfur or systemic fungicides.",
-        "action": "Monitor nearby plants for spread."
+        "description": "Rust-colored spots caused by fungal infection.",
+        "treatment": "Use sulfur-based fungicides and monitor nearby plants."
     }
 }
 
-# ---------------- MODEL LOADING ----------------
+# ---------------- LOAD MODEL ----------------
 @st.cache_resource
 def load_model():
     return pipeline(
@@ -45,106 +38,56 @@ def load_model():
         device=-1
     )
 
-# ---------------- SIDEBAR ----------------
-with st.sidebar:
-    st.title("⚙️ Controls")
-    confidence_threshold = st.slider(
-        "Confidence Threshold (%)", 0, 100, 50
-    )
-    if st.button("🔄 Reset"):
-        st.session_state.clear()
-        st.rerun()
+# ---------------- UI ----------------
+st.title("🌿 AI Crop Disease Detection")
 
-# ---------------- MAIN UI ----------------
-st.title("🌿 Crop Disease Detection System")
+st.write("Upload a leaf image and the AI will predict the disease.")
 
-tab_scan, tab_info, tab_help = st.tabs(
-    ["🔍 Leaf Scanner", "📚 Disease Info", "🧑‍🌾 Expert Locator"]
+uploaded_file = st.file_uploader(
+    "Upload leaf image", type=["jpg", "jpeg", "png"]
 )
 
-# ---------------- TAB 1: SCANNER ----------------
-with tab_scan:
-    col1, col2 = st.columns([1, 1.2])
+if uploaded_file:
+    image = Image.open(uploaded_file).convert("RGB")
+    st.image(image, caption="Uploaded Image", use_container_width=True)
 
-    with col1:
-        st.subheader("Upload Leaf Image")
-        img_file = st.file_uploader(
-            "Choose a leaf image", type=["jpg", "png", "jpeg"]
-        )
+    if st.button("🔍 Run Analysis"):
+        with st.spinner("Analyzing image..."):
+            model = load_model()
+            results = model(image)
 
-        if img_file:
-            img = Image.open(img_file).convert("RGB")
-            st.image(img, caption="Uploaded Leaf")
+            # Top prediction
+            top = results[0]
+            label_raw = top["label"]
+            score = top["score"] * 100
 
-            if st.button("🚀 Run Analysis"):
-                with st.spinner("Analyzing leaf..."):
-                    model = load_model()
-                    results = model(img)
-                    st.session_state['results'] = results
+            # Clean label formatting
+            label = label_raw.replace("_", " ").title()
 
-    with col2:
-        st.subheader("Diagnosis Result")
+            st.success(f"Detected Condition: **{label}**")
+            st.metric("Confidence", f"{score:.2f}%")
 
-        if 'results' in st.session_state:
-            try:
-                top = st.session_state['results'][0]
-                score = top['score'] * 100
-                label_raw = top['label']
+            # Show disease info
+            info = CROP_DB.get(label, {
+                "description": "Disease not found in local database.",
+                "treatment": "Consult agriculture expert."
+            })
 
-                # Clean label text
-                label = label_raw.replace("_", " ").title()
+            st.subheader("Disease Description")
+            st.write(info["description"])
 
-                if score < confidence_threshold:
-                    st.error("Low confidence. Try a clearer image.")
-                else:
-                    st.success(f"Detected: {label}")
-                    st.metric("Confidence", f"{score:.2f}%")
+            st.subheader("Recommended Treatment")
+            st.info(info["treatment"])
 
-                    info = CROP_DB.get(label, {
-                        "description": "Unknown disease.",
-                        "treatment": "Consult agriculture expert.",
-                        "action": "Further lab analysis recommended."
-                    })
+            # Show all predictions
+            st.subheader("All Model Predictions")
 
-                    st.markdown("### Description")
-                    st.write(info['description'])
+            chart_data = pd.DataFrame([
+                {
+                    "Disease": r["label"].replace("_", " "),
+                    "Probability": r["score"] * 100
+                }
+                for r in results
+            ])
 
-                    st.markdown("### Treatment")
-                    st.info(info['treatment'])
-
-                    st.markdown("### Recommended Action")
-                    st.warning(info['action'])
-
-                    # Top predictions chart
-                    chart_data = pd.DataFrame([
-                        {
-                            "Condition": r['label'].replace("_", " "),
-                            "Probability": r['score'] * 100
-                        }
-                        for r in st.session_state['results']
-                    ])
-                    st.bar_chart(chart_data.set_index("Condition"))
-
-            except Exception as e:
-                st.error("Model failed to analyze the image.")
-                st.exception(e)
-
-# ---------------- TAB 2: DISEASE INFO ----------------
-with tab_info:
-    st.header("Crop Disease Encyclopedia")
-    disease = st.selectbox("Select Disease", list(CROP_DB.keys()))
-    data = CROP_DB[disease]
-
-    st.subheader(disease)
-    st.write(data['description'])
-    st.write("Treatment:", data['treatment'])
-    st.write("Action:", data['action'])
-
-# ---------------- TAB 3: EXPERT LOCATOR ----------------
-with tab_help:
-    st.header("Find Agricultural Experts")
-
-    if st.button("Search Experts Near Me"):
-        webbrowser.open_new_tab(
-            "https://www.google.com/maps/search/agriculture+officer+near+me"
-        )
+            st.bar_chart(chart_data.set_index("Disease"))
