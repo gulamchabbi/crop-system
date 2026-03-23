@@ -1,11 +1,10 @@
-# 🌿 Crop Disease Detection AI (PRO VERSION)
+# 🌿 AI Crop Disease Detection (ULTRA PRO VERSION)
 # Author: Gulam N Chabbi
 
 import streamlit as st
 from transformers import pipeline
 from PIL import Image
 import pandas as pd
-import base64
 
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(
@@ -14,128 +13,154 @@ st.set_page_config(
     layout="wide"
 )
 
-# ---------------- BACKGROUND + GLASS UI ----------------
-def set_bg():
-    st.markdown(
-        """
-        <style>
-        .stApp {
-            background-image: url("https://images.unsplash.com/photo-1498408040764-ab6eb772a145?q=80&w=1172&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D");
-            background-size: cover;
-            background-position: center;
-        }
+# ---------------- PREMIUM UI ----------------
+def load_css():
+    st.markdown("""
+    <style>
 
-        /* Glass card effect */
-        .glass {
-            background: rgba(255, 255, 255, 0.15);
-            padding: 25px;
-            border-radius: 20px;
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-            margin-bottom: 20px;
-        }
+    /* Background Gradient */
+    .stApp {
+        background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    }
 
-        h1, h2, h3, h4 {
-            color: white !important;
-        }
+    /* Glass Cards */
+    .card {
+        background: rgba(255, 255, 255, 0.08);
+        padding: 25px;
+        border-radius: 18px;
+        backdrop-filter: blur(18px);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        transition: 0.3s;
+    }
 
-        p, label {
-            color: #f1f1f1 !important;
-        }
+    .card:hover {
+        transform: scale(1.01);
+    }
 
-        .stButton>button {
-            background: linear-gradient(45deg, #00c853, #64dd17);
-            color: white;
-            border-radius: 10px;
-            font-weight: bold;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
+    /* Title */
+    .title {
+        text-align: center;
+        font-size: 40px;
+        font-weight: bold;
+        color: white;
+    }
 
-set_bg()
+    .subtitle {
+        text-align: center;
+        color: #dcdcdc;
+        margin-bottom: 20px;
+    }
 
-# ---------------- DISEASE DATABASE ----------------
+    /* Buttons */
+    .stButton>button {
+        background: linear-gradient(45deg, #00c853, #b2ff59);
+        color: black;
+        border-radius: 12px;
+        font-weight: bold;
+        padding: 10px 20px;
+    }
+
+    /* Sidebar */
+    section[data-testid="stSidebar"] {
+        background: rgba(0,0,0,0.6);
+    }
+
+    /* Text color */
+    h1, h2, h3, h4, p, label {
+        color: white !important;
+    }
+
+    </style>
+    """, unsafe_allow_html=True)
+
+load_css()
+
+# ---------------- SIDEBAR ----------------
+st.sidebar.title("⚙️ Settings")
+st.sidebar.write("Customize your experience")
+
+show_all_predictions = st.sidebar.toggle("Show all predictions", True)
+show_confidence = st.sidebar.toggle("Show confidence score", True)
+
+st.sidebar.markdown("---")
+st.sidebar.info("🌿 AI detects crop diseases using deep learning")
+
+# ---------------- DATABASE ----------------
 CROP_DB = {
     "Healthy": {
         "description": "The leaf is healthy with no visible disease.",
-        "treatment": "No treatment required. Maintain regular care."
+        "treatment": "No treatment required."
     },
     "Angular Leaf Spot": {
-        "description": "Fungal disease causing brown angular lesions.",
-        "treatment": "Apply copper-based fungicide and remove infected leaves."
+        "description": "Fungal disease causing angular brown spots.",
+        "treatment": "Apply copper fungicide."
     },
     "Bean Rust": {
-        "description": "Rust-colored spots caused by fungal infection.",
-        "treatment": "Use sulfur-based fungicides and monitor nearby plants."
+        "description": "Rust-colored fungal infection.",
+        "treatment": "Use sulfur fungicide."
     }
 }
 
-# ---------------- LOAD MODEL ----------------
-@st.cache_resource(show_spinner=False)
+# ---------------- MODEL ----------------
+@st.cache_resource
 def load_model():
-    return pipeline(
-        "image-classification",
-        model="nateraw/vit-base-beans"
-    )
+    return pipeline("image-classification", model="nateraw/vit-base-beans")
 
 # ---------------- HEADER ----------------
-st.markdown("<h1 style='text-align:center;'>🌿 AI Crop Disease Detection</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center;'>Upload a leaf image and detect diseases instantly using AI</p>", unsafe_allow_html=True)
+st.markdown('<div class="title">🌿 AI Crop Disease Detection</div>', unsafe_allow_html=True)
+st.markdown('<div class="subtitle">Upload a leaf image and get instant AI diagnosis</div>', unsafe_allow_html=True)
 
-# ---------------- UPLOAD SECTION ----------------
-with st.container():
-    st.markdown('<div class="glass">', unsafe_allow_html=True)
+# ---------------- UPLOAD ----------------
+st.markdown('<div class="card">', unsafe_allow_html=True)
+uploaded_file = st.file_uploader("📤 Upload Leaf Image", type=["jpg", "png", "jpeg"])
+st.markdown('</div>', unsafe_allow_html=True)
 
-    uploaded_file = st.file_uploader("📤 Upload Leaf Image", type=["jpg", "jpeg", "png"])
-
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# ---------------- MAIN LOGIC ----------------
+# ---------------- MAIN ----------------
 if uploaded_file:
     image = Image.open(uploaded_file).convert("RGB")
 
-    col1, col2 = st.columns(2)
+    col1, col2 = st.columns([1, 1.2])
 
+    # LEFT SIDE (IMAGE)
     with col1:
-        st.markdown('<div class="glass">', unsafe_allow_html=True)
-        st.image(image, caption="Uploaded Image", use_container_width=True)
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.subheader("📸 Uploaded Image")
+        st.image(image, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
+    # RIGHT SIDE (RESULT)
     with col2:
-        st.markdown('<div class="glass">', unsafe_allow_html=True)
+        st.markdown('<div class="card">', unsafe_allow_html=True)
 
-        if st.button("🔍 Analyze Image"):
-            with st.spinner("Analyzing... Please wait"):
+        if st.button("🚀 Run AI Analysis"):
+            with st.spinner("Analyzing image..."):
                 model = load_model()
                 results = model(image)
 
                 top = results[0]
-                label_raw = top["label"]
+                label = top["label"].replace("_", " ").title()
                 score = top["score"] * 100
-                label = label_raw.replace("_", " ").title()
 
-                st.success(f"🌱 Detected: {label}")
-                st.metric("Confidence", f"{score:.2f}%")
+                st.success(f"🌱 {label}")
+
+                if show_confidence:
+                    st.progress(int(score))
+                    st.write(f"Confidence: {score:.2f}%")
 
                 info = CROP_DB.get(label, {
-                    "description": "Not found in database.",
-                    "treatment": "Consult an agriculture expert."
+                    "description": "Not available.",
+                    "treatment": "Consult expert."
                 })
 
-                st.subheader("📖 Description")
+                st.markdown("### 📖 Description")
                 st.write(info["description"])
 
-                st.subheader("💊 Treatment")
+                st.markdown("### 💊 Treatment")
                 st.info(info["treatment"])
 
-                # ---------------- REPORT DOWNLOAD ----------------
+                # REPORT
                 report = f"""
-Crop Disease Detection Report
-
-Detected Disease: {label}
+Disease: {label}
 Confidence: {score:.2f}%
 
 Description:
@@ -143,29 +168,32 @@ Description:
 
 Treatment:
 {info['treatment']}
-
-Developed by Gulam N Chabbi
 """
                 st.download_button("📄 Download Report", report)
 
-                # ---------------- CHART ----------------
-                st.subheader("📊 All Predictions")
+        st.markdown('</div>', unsafe_allow_html=True)
 
-                chart_data = pd.DataFrame([
-                    {
-                        "Disease": r["label"].replace("_", " "),
-                        "Probability": r["score"] * 100
-                    }
-                    for r in results
-                ])
+    # ---------------- PREDICTIONS ----------------
+    if show_all_predictions:
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.markdown("### 📊 Detailed Predictions")
 
-                st.bar_chart(chart_data.set_index("Disease"))
+        chart_data = pd.DataFrame([
+            {
+                "Disease": r["label"].replace("_", " "),
+                "Probability": r["score"] * 100
+            }
+            for r in results
+        ])
+
+        st.dataframe(chart_data, use_container_width=True)
+        st.bar_chart(chart_data.set_index("Disease"))
 
         st.markdown('</div>', unsafe_allow_html=True)
 
 # ---------------- FOOTER ----------------
-st.markdown("<hr>", unsafe_allow_html=True)
+st.markdown("---")
 st.markdown(
-    "<p style='text-align:center;'>🚀 Developed by <b>Gulam N Chabbi</b></p>",
+    "<p style='text-align:center;'>🚀 Developed by <b>Gulam N Chabbi</b> | AI Project</p>",
     unsafe_allow_html=True
 )
