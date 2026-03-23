@@ -53,8 +53,9 @@ CROP_DB = {
 def load_model():
     return pipeline(
         "image-classification",
-        model="linkanjarad/mobilenet_v2_1.0_224-plant-disease-identification"
+        model="Sanchit2810/plant-disease-classification-resnet50"
     )
+
 
 # --- 4. SIDEBAR ---
 with st.sidebar:
