@@ -53,8 +53,10 @@ CROP_DB = {
 def load_model():
     return pipeline(
         "image-classification",
-        model="Sanchit2810/plant-disease-classification-resnet50"
+        model="Sanchit2810/plant-disease-classification-resnet50",
+        device=-1  # ensures CPU usage on Streamlit Cloud
     )
+
 
 
 # --- 4. SIDEBAR ---
