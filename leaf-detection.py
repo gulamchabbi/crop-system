@@ -1,4 +1,4 @@
-# 🌿 AI Crop Disease Detection (ULTRA PRO VERSION)
+# 🌿 AI Crop Disease Detection (FINAL PRO UI)
 # Author: Gulam N Chabbi
 
 import streamlit as st
@@ -13,14 +13,35 @@ st.set_page_config(
     layout="wide"
 )
 
-# ---------------- PREMIUM UI ----------------
+# ---------------- PREMIUM UI WITH IMAGE ----------------
 def load_css():
     st.markdown("""
     <style>
 
-    /* Background Gradient */
+    /* Background Image */
     .stApp {
-        background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+        background-image: url("https://images.unsplash.com/photo-1470115636492-6d2b56f9146d?q=80&w=1920");
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+    }
+
+    /* Dark Overlay */
+    .stApp::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.55);
+        z-index: 0;
+    }
+
+    /* Keep content above overlay */
+    .main {
+        position: relative;
+        z-index: 1;
     }
 
     /* Glass Cards */
@@ -29,7 +50,8 @@ def load_css():
         padding: 25px;
         border-radius: 18px;
         backdrop-filter: blur(18px);
-        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        margin-bottom: 20px;
         transition: 0.3s;
     }
 
@@ -40,15 +62,15 @@ def load_css():
     /* Title */
     .title {
         text-align: center;
-        font-size: 40px;
+        font-size: 42px;
         font-weight: bold;
         color: white;
     }
 
     .subtitle {
         text-align: center;
-        color: #dcdcdc;
-        margin-bottom: 20px;
+        color: #e0e0e0;
+        margin-bottom: 25px;
     }
 
     /* Buttons */
@@ -65,7 +87,7 @@ def load_css():
         background: rgba(0,0,0,0.6);
     }
 
-    /* Text color */
+    /* Text colors */
     h1, h2, h3, h4, p, label {
         color: white !important;
     }
@@ -77,13 +99,11 @@ load_css()
 
 # ---------------- SIDEBAR ----------------
 st.sidebar.title("⚙️ Settings")
-st.sidebar.write("Customize your experience")
-
 show_all_predictions = st.sidebar.toggle("Show all predictions", True)
-show_confidence = st.sidebar.toggle("Show confidence score", True)
+show_confidence = st.sidebar.toggle("Show confidence", True)
 
 st.sidebar.markdown("---")
-st.sidebar.info("🌿 AI detects crop diseases using deep learning")
+st.sidebar.info("🌿 AI-powered crop disease detection system")
 
 # ---------------- DATABASE ----------------
 CROP_DB = {
@@ -92,7 +112,7 @@ CROP_DB = {
         "treatment": "No treatment required."
     },
     "Angular Leaf Spot": {
-        "description": "Fungal disease causing angular brown spots.",
+        "description": "Fungal disease causing angular brown lesions.",
         "treatment": "Apply copper fungicide."
     },
     "Bean Rust": {
@@ -121,14 +141,14 @@ if uploaded_file:
 
     col1, col2 = st.columns([1, 1.2])
 
-    # LEFT SIDE (IMAGE)
+    # IMAGE
     with col1:
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.subheader("📸 Uploaded Image")
         st.image(image, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # RIGHT SIDE (RESULT)
+    # RESULT
     with col2:
         st.markdown('<div class="card">', unsafe_allow_html=True)
 
@@ -149,7 +169,7 @@ if uploaded_file:
 
                 info = CROP_DB.get(label, {
                     "description": "Not available.",
-                    "treatment": "Consult expert."
+                    "treatment": "Consult agriculture expert."
                 })
 
                 st.markdown("### 📖 Description")
@@ -158,8 +178,10 @@ if uploaded_file:
                 st.markdown("### 💊 Treatment")
                 st.info(info["treatment"])
 
-                # REPORT
+                # DOWNLOAD REPORT
                 report = f"""
+Crop Disease Detection Report
+
 Disease: {label}
 Confidence: {score:.2f}%
 
@@ -168,6 +190,8 @@ Description:
 
 Treatment:
 {info['treatment']}
+
+Developed by Gulam N Chabbi
 """
                 st.download_button("📄 Download Report", report)
 
@@ -176,6 +200,7 @@ Treatment:
     # ---------------- PREDICTIONS ----------------
     if show_all_predictions:
         st.markdown('<div class="card">', unsafe_allow_html=True)
+
         st.markdown("### 📊 Detailed Predictions")
 
         chart_data = pd.DataFrame([
@@ -194,6 +219,6 @@ Treatment:
 # ---------------- FOOTER ----------------
 st.markdown("---")
 st.markdown(
-    "<p style='text-align:center;'>🚀 Developed by <b>Gulam N Chabbi</b> | AI Project</p>",
+    "<p style='text-align:center;'>🚀 Developed by <b>Gulam N Chabbi</b></p>",
     unsafe_allow_html=True
 )
