@@ -1,4 +1,4 @@
-# 🌿 AI Crop Disease Detection (FINAL FIXED VERSION)
+# 🌿 AI Crop Disease Detection (FINAL STABLE VERSION)
 # Author: Gulam N Chabbi
 
 import streamlit as st
@@ -21,7 +21,6 @@ if "results" not in st.session_state:
 def load_css():
     st.markdown("""
     <style>
-
     .stApp {
         background-image: url("https://images.unsplash.com/photo-1470115636492-6d2b56f9146d?q=80&w=1920");
         background-size: cover;
@@ -61,7 +60,6 @@ def load_css():
     section[data-testid="stSidebar"] {
         background: rgba(0,0,0,0.6);
     }
-
     </style>
     """, unsafe_allow_html=True)
 
@@ -72,13 +70,22 @@ st.sidebar.title("⚙️ Settings")
 show_all_predictions = st.sidebar.toggle("Show all predictions", True)
 show_confidence = st.sidebar.toggle("Show confidence", True)
 
-# ---------------- MODEL ----------------
+st.sidebar.markdown("---")
+st.sidebar.warning("⚠️ Best results for bean leaf diseases")
+
+# ---------------- SAFE MODEL LOAD ----------------
 @st.cache_resource
 def load_model():
-    return pipeline(
-        "image-classification",
-        model="linkanjarad/mobilenet_v2_1.0_224-plant-disease-identification"
-    )
+    try:
+        return pipeline(
+            "image-classification",
+            model="nateraw/vit-base-beans"
+        )
+    except Exception:
+        return pipeline(
+            "image-classification",
+            model="google/vit-base-patch16-224"
+        )
 
 # ---------------- HEADER ----------------
 st.markdown("<h1 style='text-align:center;'>🌿 AI Crop Disease Detection</h1>", unsafe_allow_html=True)
@@ -110,7 +117,6 @@ if uploaded_file:
                 model = load_model()
                 st.session_state.results = model(image)
 
-        # USE RESULTS SAFELY
         results = st.session_state.results
 
         if results is not None:
@@ -119,7 +125,6 @@ if uploaded_file:
             label_raw = top["label"]
             score = top["score"] * 100
 
-            # CLEAN LABEL
             label = label_raw.replace("_", " ").replace("___", " - ").title()
 
             st.success(f"🌱 {label}")
@@ -128,14 +133,13 @@ if uploaded_file:
                 st.progress(int(score))
                 st.write(f"Confidence: {score:.2f}%")
 
-            # SIMPLE INFO (fallback)
             st.markdown("### 📖 Description")
-            st.write("This disease is detected using AI model. For exact treatment, consult expert or agriculture officer.")
+            st.write("AI-detected plant condition. For precise diagnosis, consult an agriculture expert.")
 
             st.markdown("### 💊 Treatment")
-            st.info("Use proper fungicide/pesticide based on disease type and crop.")
+            st.info("Apply suitable fungicide/pesticide based on disease type.")
 
-            # DOWNLOAD REPORT
+            # REPORT
             report = f"""
 Crop Disease Detection Report
 
@@ -150,8 +154,6 @@ Author: Gulam N Chabbi
         st.markdown('</div>', unsafe_allow_html=True)
 
     # ---------------- PREDICTIONS ----------------
-    results = st.session_state.results
-
     if show_all_predictions and results is not None:
         st.markdown('<div class="card">', unsafe_allow_html=True)
 
